@@ -1,0 +1,23 @@
+{
+  "name": "show-service-user",
+  "version": "1.0.0",
+  "description": "A microservice for managing User logic",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ctlup/show-service-user.git"
+  },
+  "author": "Artsiom Sauchuk",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ctlup/show-service-user/issues"
+  },
+  "homepage": "https://github.com/ctlup/show-service-user#readme",
+  "dependencies": {
+    "bcrypt": "^5.0.1",
+    "express": "^4.18.1"
+  }
+}
