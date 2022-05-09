@@ -1,20 +1,25 @@
 import express from 'express'
+import { authentication, getUserInfo, loginController, signUpController } from './controllers';
+
 const app = express()
-const port = (+process.env.PORT) || 3000;
+const PORT = (+process.env.PORT) || 3000;
 
-const {
-    LOGIN_PATH,
-    SIGNUP_PATH,
-    USER_INFO_PATH,
-} = process.env;
+// const {
+//     LOGIN_PATH,
+//     SIGNUP_PATH,
+//     USER_INFO_PATH,
+// } = process.env;
+SIGNUP_PATH = '/user/'
+LOGIN_PATH = '/user/';
+USER_INFO_PATH = '/user/:id'
+USER_INFO_SELF = '/user/me'
+
 app.use(express.json())
-app.get(SIGNUP_PATH, (req, res) => {
 
-})
-app.get(LOGIN_PATH, (req, res) => {
-  
-})
+app.post(SIGNUP_PATH, signUpController)
+app.post(LOGIN_PATH, loginController)
+app.get(USER_INFO_PATH, authentication, getUserInfo)
 
-app.listen(port, () => {
-  console.log(`Server started on port: ${port}`)
+app.listen(PORT, () => {
+  console.log(`Server started on port: ${PORT}`)
 })
