@@ -1,5 +1,6 @@
 import express from 'express'
 import { authentication, getUserInfo, loginController, signUpController } from './controllers';
+import 'dotenv/config'
 
 const app = express()
 const PORT = (+process.env.PORT) || 3000;

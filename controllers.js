@@ -23,7 +23,7 @@ export function signUpController(req, res) {
         !userData.pwd_raw
     ) res.status(400).json(requestErrorMessage("The user data is not completed!", req.body));
     if(!pwd_re.test(userData.pwd_raw)) {
-        const msg = "Password is not enough strong: there should be at minimum 8 characters, at least one letter and one number";
+        const msg = "Password is not enough strong: there should be minimum 8 characters, at least one letter and one number";
         res.status(400).json(requestErrorMessage(msg, req.body))
     }
     if(!email_re.test(userData.email)) {
@@ -50,7 +50,7 @@ export function loginController(req, res) {
         const user = await User.getByEmail(req.body.email);
         const isPwdValid = await bcrypt.compare(req.body.password, user.pwd_hash);
         if(isPwdValid) {
-            const token = jwt.sign({user: user.id}, process.env.SECRET)
+            const token = jwt.sign({user: user.id, auth_time: Date.now()}, process.env.SECRET)
             res.append('Authorization', `Bearer ${token}`)
             res.end('OK!')
         } else {
@@ -70,7 +70,7 @@ export function getUserInfo(req, res) {
         res.status(400).json(requestErrorMessage(msg))
     }
     try {
-        const user = await User.get(req.params.id);
+        const user = await User.getById(req.params.id);
         res.json(user).end();
     } catch(e) {
         // TODO: response the error status depending on the server side or client side issue
