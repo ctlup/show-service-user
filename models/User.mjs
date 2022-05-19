@@ -1,4 +1,4 @@
-import pool from "../db_driver";
+import pool from "../db_driver.mjs";
 
 export class User {
     User(userData={}) {

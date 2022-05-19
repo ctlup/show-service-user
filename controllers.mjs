@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
-import { User } from "./models/User";
-import logger from './logger';
+import { User } from "./models/User.mjs";
+import logger from './logger.mjs';
 
 const pwd_re = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
 const email_re = /^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i;
@@ -33,7 +33,7 @@ export function signUpController(req, res) {
         res.status(400).json(logAndCreateErrorObj(msg, userData.email))
     }
     
-    bcrypt.hash(userData.pwd_raw, saltRounds, function(err, hash) {
+    bcrypt.hash(userData.pwd_raw, saltRounds, async function(err, hash) {
         if(err) res.status(500).json(logAndCreateErrorObj("Internal service error", req.body))
         userData.pwd_hash = hash;
         const user = new User(userData);
@@ -44,10 +44,12 @@ export function signUpController(req, res) {
     });
 }
 
-export function loginController(req, res) {
+export async function loginController(req, res) {
+    req.body = req.body || {};
     if(!req.body.email || !req.body.password) {
         const msg = "Credentials are not specified";
         res.status(400).json(logAndCreateErrorObj(msg))
+        return
     }
     try {
         const user = await User.getByEmail(req.body.email);
@@ -69,7 +71,7 @@ export function loginController(req, res) {
 
 }
 
-export function getUserInfo(req, res) {
+export async function getUserInfo(req, res) {
     if(!req.params.id) {
         const msg = "User ID is not specified.";
         res.status(400).json(logAndCreateErrorObj(msg))
@@ -88,6 +90,11 @@ export function getUserInfo(req, res) {
 export function requestLogger(req, res, next) {
     logger.info("%s - [%s] %s", req.protocol, req.method, req.originalUrl);
     next();
+}
+
+export function notFound(req, res) {
+    logger.info('Unknown path %s', req.originalUrl)
+    res.status(404).end("Unknown Path")
 }
 
 function logAndCreateErrorObj(msg, req) {
