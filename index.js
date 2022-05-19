@@ -15,6 +15,7 @@ LOGIN_PATH = '/user/';
 USER_INFO_PATH = '/user/:id'
 USER_INFO_SELF = '/user/me'
 
+app.use(loginController)
 app.use(express.json())
 
 app.post(SIGNUP_PATH, signUpController)

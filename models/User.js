@@ -53,9 +53,11 @@ export class User {
                 pwd_hash -> ${this.pwd_hash}`
             )
         }
+        currTime = new Date()
         const text = `INSERT INTO User(name, surname, email, phone, pwd_hash, signup_time, last_login_time, address)
                       VALUES($1, $2, $3, $4, $5, $6, $7, $8)`;
-        const values = [this.name, this.surname, this.email, this.phone, this.pwd_hash, ];
-        // TODO Fill the values
+        const values = [this.name, this.surname, this.email, this.phone, this.pwd_hash, currTime, currTime, this.address];
+        const res = await pool.query(text, values);
+        return res
     }
 }
