@@ -16,30 +16,47 @@ export function authentication(req, res, next) {
 
 export function signUpController(req, res) {
     const userData = req.body || {}
-    
     if(
         !userData.name || 
         !userData.surname || 
         !userData.email || 
         !userData.phone || 
         !userData.pwd_raw
-    ) res.status(400).json(logAndCreateErrorObj("The user data is not completed!", req.body));
+    ) {
+        res.status(400).json(logAndCreateErrorObj("The user data is not completed!", req.body));
+        return
+    }
     if(!pwd_re.test(userData.pwd_raw)) {
         const msg = "Password is not enough strong: there should be minimum 8 characters, at least one letter and one number";
         res.status(400).json(logAndCreateErrorObj(msg, req.body))
+        return
     }
     if(!email_re.test(userData.email)) {
         const msg = "Email is not valid";
         res.status(400).json(logAndCreateErrorObj(msg, userData.email))
+        return
     }
-    
+
+    const saltRounds = 2
     bcrypt.hash(userData.pwd_raw, saltRounds, async function(err, hash) {
-        if(err) res.status(500).json(logAndCreateErrorObj("Internal service error", req.body))
+        if(err) {
+            res.status(500).json(logAndCreateErrorObj("Internal service error", req.body));
+            return
+        }
         userData.pwd_hash = hash;
+        
         const user = new User(userData);
-        res.end();
-        const result = await user.create();
-        logger.info("Created new user %s", result)
+
+        try {
+            const result = await user.create();
+            logger.info("Created new user %s", result)
+            res.status(200).end('OK!')
+        } catch(err) {
+            logger.error(err)
+            res.status(500).json(logAndCreateErrorObj("Internal service error", req.body))
+            return
+        }
+        
         
     });
 }
@@ -58,7 +75,7 @@ export async function loginController(req, res) {
             const token = jwt.sign({user: user.id, auth_time: Date.now()}, process.env.SECRET)
             res.append('Authorization', `Bearer ${token}`)
             logger.info("User %s was successfully logged in", req.body.email)
-            res.end('OK!')
+            res.json(user).status(200).end();
         } else {
             const msg = "Credentials are not valid";
             logger.info("User %s didn't logged in. Credentials are not valid", req.body.email)
