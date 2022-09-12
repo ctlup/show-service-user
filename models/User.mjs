@@ -22,6 +22,11 @@ export class User {
         const text = "SELECT name, surname, email, phone, personal_points, address FROM public.\"User\" WHERE ID=$1;";
         const values = [id];
         const res = await pool.query(text, values);
+        const userData = res.rows[0];
+        if(!userData) {
+            return null;
+        } 
+        
         const user = new User(res.rows[0])
         return user; 
     }
@@ -30,6 +35,10 @@ export class User {
         const text = "SELECT name, surname, email, phone, personal_points, address FROM public.\"User\" WHERE email=$1;";
         const values = [email];
         const res = await pool.query(text, values);
+        const userData = res.rows[0];
+        if(!userData) {
+            return null;
+        }
         const user = new User(res.rows[0])
         return user;
     }
@@ -63,7 +72,7 @@ export class User {
             )
         }
         const currTime = new Date()
-        const text = 'INSERT INTO public."User"(name, surname, email, phone, pwd_hash, personal_points,signup_time, last_login_time, address) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9);';
+        const text = 'INSERT INTO public."User"(name, surname, email, phone, pwd_hash, personal_points,signup_time, last_login_time, address) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id;';
         const values = [this.name, this.surname, this.email, this.phone, this.pwd_hash, 100, currTime, currTime, this.address];
         console.log(values)
         const res = await pool.query(text, values);

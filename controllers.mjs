@@ -1,16 +1,24 @@
 import bcrypt from 'bcrypt';
 import { User } from "./models/User.mjs";
 import logger from './logger.mjs';
+import jwt from 'jsonwebtoken'
 
 const pwd_re = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
 const email_re = /^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i;
 
 export function authentication(req, res, next) {
-    jwt_field = req.get("Authorization")
-    if(!jwt_field) {
-        res.status(401).end("No token attached to the request.")
+    const jwt_token = req.get("Authorization")
+    if(!jwt_token) {
+        res.status(401).end("There is no token attached to the request.")
         return
     }
+    jwt.verify(jwt_token, process.env.SECRET, function(err, decoded) {
+        if(err) {
+            res.status(401).end("User is not authorized")
+            return
+        }
+        res.locals.user_id = decoded.user
+    })
     next()
 }
 
@@ -40,6 +48,7 @@ export function signUpController(req, res) {
     const saltRounds = 2
     bcrypt.hash(userData.pwd_raw, saltRounds, async function(err, hash) {
         if(err) {
+            logger.error(err)
             res.status(500).json(logAndCreateErrorObj("Internal service error", req.body));
             return
         }
@@ -50,14 +59,16 @@ export function signUpController(req, res) {
         try {
             const result = await user.create();
             logger.info("Created new user %s", result)
+            
+            const id = result.rows[0] && result.rows[0].id;
+            const token = jwt.sign({user: id, auth_time: Date.now()}, process.env.SECRET)
+            res.append('Authorization', `${token}`)
             res.status(200).end('OK!')
         } catch(err) {
             logger.error(err)
             res.status(500).json(logAndCreateErrorObj("Internal service error", req.body))
             return
         }
-        
-        
     });
 }
 
@@ -70,10 +81,14 @@ export async function loginController(req, res) {
     }
     try {
         const user = await User.getByEmail(req.body.email);
+        if(!user) {
+            res.status(404).end(`User with email: ${req.body.email} not found`);
+            return
+        }
         const isPwdValid = await bcrypt.compare(req.body.password, user.pwd_hash);
         if(isPwdValid) {
             const token = jwt.sign({user: user.id, auth_time: Date.now()}, process.env.SECRET)
-            res.append('Authorization', `Bearer ${token}`)
+            res.append('Authorization', `${token}`)
             logger.info("User %s was successfully logged in", req.body.email)
             res.json(user).status(200).end();
         } else {
@@ -94,7 +109,12 @@ export async function getUserInfo(req, res) {
         res.status(400).json(logAndCreateErrorObj(msg))
     }
     try {
-        const user = await User.getById(req.params.id);
+        user_id = res.locals.user_id;
+        const user = await User.getById(user_id);
+        if(!user) {
+            res.status(404).end(`User with ID: ${req.params.id} not found`)
+            return
+        }
         res.json(user).end();
         logger.info("User with id %s, was successfully requested", req.params.id)
     } catch(e) {
